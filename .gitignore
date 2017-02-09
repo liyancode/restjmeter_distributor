@@ -1,1 +1,5 @@
 .idea
+.gitignore
+Gemfile.lock
+test.rb
+log.log
