@@ -1,0 +1,11 @@
+# config file
+
+SinatraPort: 15555
+System_Log_File: "./log.log"
+System_Log_Level: "DEBUG"
+
+Heartbeat_Interval: 1
+
+RESTJmeter_Agents: ["localhost:9999","localhost:9998","localhost:9997"]
+
+X_RESTJmeter_TOKEN: "UkVTVEptZXRlcl9UT0tFTg==" # Header for Auth
