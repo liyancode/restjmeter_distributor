@@ -73,6 +73,7 @@ post '/rest/jmx' do
         response=client.post(url, body_str, {"X_RESTJmeter_TOKEN" => CONFIG["X_RESTJmeter_TOKEN"]})
         status 202
         p test_id=JSON.parse(response.content)["test_id"]
+        {:test_id=>test_id}.to_json
       end
     rescue Exception=>e
       p e
