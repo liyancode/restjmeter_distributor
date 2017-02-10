@@ -9,7 +9,8 @@ mutex=Mutex.new
 # {"****"=>{:address=>"****",:status=>1,..},}
 agents=Hash.new
 
-# daemon thread
+#============================================
+# daemon thread, for heartbeat
 Thread.new{
   while true
     AgentAddresses.each{|address|
@@ -28,6 +29,7 @@ Thread.new{
     sleep(CONFIG["Heartbeat_Interval"]) # heartbeat interval 1 sec
   end
 }
+#============================================
 
 def choose_best_agent(agents,mutex)
   begin
@@ -51,6 +53,7 @@ def choose_best_agent(agents,mutex)
   end
 end
 
+#=================== post new testing ================
 post '/rest/jmx' do
   if request.env["HTTP_X_RESTJMETER_TOKEN"]!=CONFIG["X_RESTJmeter_TOKEN"]
     LOGGER.info("Access log. Request with invalid HTTP_X_RESTJMETER_TOKEN:#{request.env["HTTP_X_RESTJMETER_TOKEN"]}")
@@ -82,6 +85,7 @@ post '/rest/jmx' do
   end
 end
 
+#=================== get testing result================
 # GET. return testing status and results to client
 get '/rest/result/:testid' do
   LOGGER.info("Access log. GET: #{request}")
