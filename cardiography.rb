@@ -81,3 +81,33 @@ post '/rest/jmx' do
     end
   end
 end
+
+# GET. return testing status and results to client
+get '/rest/result/:testid' do
+  LOGGER.info("Access log. GET: #{request}")
+  if request.env["HTTP_X_RESTJMETER_TOKEN"]!=CONFIG["X_RESTJmeter_TOKEN"]
+    LOGGER.info("Access log. Request with invalid HTTP_X_RESTJMETER_TOKEN:#{request.env["HTTP_X_RESTJMETER_TOKEN"]}")
+    status 403
+    '{error:"X_RESTJmeter_TOKEN incorrect"}'
+  else
+    begin
+      best_address=choose_best_agent(agents,mutex)
+      if agents[best_address][:status]==-1
+        status 500
+        return '{error:"no available test agent!"}'
+      else
+        testid=params[:testid]
+        client=HTTPClient.new
+        extheader = {"X_RESTJmeter_TOKEN" => CONFIG["X_RESTJmeter_TOKEN"]}
+        url="http://#{best_address}/rest/result/#{testid}"
+        query={}
+        response=client.get(url, query, extheader)
+        status 200
+        return response.content
+      end
+    rescue Exception=>e
+      LOGGER.error(e)
+      status 500
+    end
+  end
+end
