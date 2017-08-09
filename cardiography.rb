@@ -16,7 +16,7 @@ Thread.new{
     AgentAddresses.each{|address|
       begin
         client=HTTPClient.new
-        size=JSON.parse(client.get("http://#{address}/rest/hello",{},{}).content)["queue_size"].to_i
+        size=MultiJson.load(client.get("http://#{address}/rest/hello",{},{}).content)["queue_size"].to_i
         mutex.synchronize{
           agents[address]={:address=>address,:status=>size}
         }
@@ -72,8 +72,8 @@ post '/rest/jmx' do
         url="http://#{best_address}/rest/jmx"
         response=client.post(url, body_str, {"X_RESTJmeter_TOKEN" => CONFIG["X_RESTJmeter_TOKEN"]})
         status 202
-        p test_id=JSON.parse(response.content)["test_id"]
-        {:test_id=>test_id}.to_json
+        p test_id=MultiJson.load(response.content)["test_id"]
+        MultiJson.dump({:test_id=>test_id})
       end
     rescue Exception=>e
       p e
