@@ -1,10 +1,10 @@
 # config file
 
-SinatraPort: 15555
+SinatraPort: 16666
 System_Log_File: "./log.log"
 System_Log_Level: "DEBUG"
 
-Heartbeat_Interval: 1
+Heartbeat_Interval: 10
 
 RESTJmeter_Agents: ["localhost:9999","localhost:9998","localhost:9997"]
 

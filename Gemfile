@@ -1,4 +1,4 @@
-source 'https://ruby.taobao.org' # gem源地址
+source 'https://rubygems.org' # gem源地址
 gem 'sinatra'
 gem 'logger'
 gem 'json'
