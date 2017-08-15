@@ -9,20 +9,27 @@ mutex=Mutex.new
 # {"****"=>{:address=>"****",:status=>1,..},}
 agents=Hash.new
 
+# global Queue size
+global_q_size=0
 #============================================
 # daemon thread, for heartbeat
 Thread.new{
   while true
+    mutex.synchronize{
+      global_q_size=0
+    }
     AgentAddresses.each{|address|
       begin
         client=HTTPClient.new
         size=MultiJson.load(client.get("http://#{address}/rest/hello",{},{}).content)["queue_size"].to_i
         mutex.synchronize{
           agents[address]={:address=>address,:status=>size}
+          global_q_size=global_q_size+size
         }
       rescue Exception
         mutex.synchronize{
           agents[address]={:address=>address,:status=>-1}
+          global_q_size=0
         }
       end
     }
@@ -57,7 +64,7 @@ end
 post '/rest/jmx' do
   if request.env["HTTP_X_RESTJMETER_TOKEN"]!=CONFIG["X_RESTJmeter_TOKEN"]
     LOGGER.info("Access log. Request with invalid HTTP_X_RESTJMETER_TOKEN:#{request.env["HTTP_X_RESTJMETER_TOKEN"]}")
-    status 403
+    status 401
     '{error:"X_RESTJmeter_TOKEN incorrect"}'
   else
     body_str=request.body.string
@@ -92,7 +99,7 @@ get '/rest/result/:testid' do
   LOGGER.info("Access log. GET: #{request}")
   if request.env["HTTP_X_RESTJMETER_TOKEN"]!=CONFIG["X_RESTJmeter_TOKEN"]
     LOGGER.info("Access log. Request with invalid HTTP_X_RESTJMETER_TOKEN:#{request.env["HTTP_X_RESTJMETER_TOKEN"]}")
-    status 403
+    status 401
     '{error:"X_RESTJmeter_TOKEN incorrect"}'
   else
     begin
@@ -115,4 +122,29 @@ get '/rest/result/:testid' do
       status 500
     end
   end
+end
+
+# get global queue size
+get '/rest/queuesize' do
+  LOGGER.info("Access log. GET: #{request}")
+  if request.env["HTTP_X_RESTJMETER_TOKEN"]!=CONFIG["X_RESTJmeter_TOKEN"]
+    LOGGER.info("Access log. Request with invalid HTTP_X_RESTJMETER_TOKEN:#{request.env["HTTP_X_RESTJMETER_TOKEN"]}")
+    status 401
+    '{error:"X_RESTJmeter_TOKEN incorrect"}'
+  else
+    begin
+      mutex.synchronize{
+        status 200
+        MultiJson.dump({:queue_size=>global_q_size,:agents=>agents,:server_time=>Time.now.utc})
+      }
+    rescue Exception=>e
+      LOGGER.error(e)
+      status 500
+    end
+  end
+end
+
+# 404
+not_found do
+  'bad path'
 end
