@@ -15,23 +15,24 @@ global_q_size=0
 # daemon thread, for heartbeat
 Thread.new{
   while true
-    mutex.synchronize{
-      global_q_size=0
-    }
+    temp_size=0
     AgentAddresses.each{|address|
       begin
         client=HTTPClient.new
         size=MultiJson.load(client.get("http://#{address}/rest/hello",{},{}).content)["queue_size"].to_i
         mutex.synchronize{
           agents[address]={:address=>address,:status=>size}
-          global_q_size=global_q_size+size
+          temp_size=temp_size+size
         }
       rescue Exception
         mutex.synchronize{
           agents[address]={:address=>address,:status=>-1}
-          global_q_size=0
+          temp_size=0
         }
       end
+    }
+    mutex.synchronize{
+      global_q_size=temp_size
     }
     sleep(CONFIG["Heartbeat_Interval"]) # heartbeat interval 1 sec
   end
@@ -141,6 +142,27 @@ get '/rest/queuesize' do
       LOGGER.error(e)
       status 500
     end
+  end
+end
+
+# upload back the .jmx script file and its data csv files as a zip file
+post '/rest/upload' do
+  begin
+    p @test_id=params[:test_id]
+    p @filename = params[:file][:filename]
+    file = params[:file][:tempfile]
+
+    @new_dir="#{CONFIG["Upload_JMX_CSV_Folder"]}/#{@test_id}"
+    if !Dir.exist?(@new_dir)
+      Dir.mkdir(@new_dir,0700) # not exited
+    end
+    File.open("#{@new_dir}/#{@filename}", 'wb') do |f|
+      f.write(file.read)
+    end
+    status 201
+  rescue Exception=>e
+    p e
+    status 500
   end
 end
 
