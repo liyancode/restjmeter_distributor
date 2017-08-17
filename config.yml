@@ -4,8 +4,10 @@ SinatraPort: 16666
 System_Log_File: "./log.log"
 System_Log_Level: "DEBUG"
 
-Heartbeat_Interval: 10
+Heartbeat_Interval: 60
 
 RESTJmeter_Agents: ["localhost:9999","localhost:9998","localhost:9997"]
 
 X_RESTJmeter_TOKEN: "UkVTVEptZXRlcl9UT0tFTg==" # Header for Auth
+
+Upload_JMX_CSV_Folder: /Users/yanli6/Desktop/tempjmxdir
