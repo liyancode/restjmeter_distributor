@@ -145,7 +145,7 @@ get '/rest/queuesize' do
   end
 end
 
-# upload back the .jmx script file and its data csv files as a zip file
+# upload back the .jmx script file and its data csv files
 post '/rest/upload' do
   begin
     p @test_id=params[:test_id]
@@ -166,6 +166,47 @@ post '/rest/upload' do
   end
 end
 
+# download .jmx script file and its data csv files by test_id
+get '/rest/download/:test_id' do
+  begin
+    @test_id=params[:test_id]
+
+    folder = "#{CONFIG["Upload_JMX_CSV_Folder"]}/#{@test_id}"
+    if Dir.exist?(folder)
+      # existed
+      zipfile_name="#{CONFIG["Upload_JMX_CSV_Folder"]}/#{@test_id}/#{@test_id}.zip"
+      if !File.exist?(zipfile_name)
+        # no zipped
+        input_filenames=[]
+        Dir["#{CONFIG["Upload_JMX_CSV_Folder"]}/#{@test_id}/*"].each{|filename|
+          if filename.include?('.jmx')||filename.include?('.csv')
+            input_filenames<<filename.split('/').last
+          end
+        }
+
+        Zip::File.open(zipfile_name, Zip::File::CREATE) do |zipfile|
+          input_filenames.each do |filename|
+            # Two arguments:
+            # - The name of the file as it will appear in the archive
+            # - The original file, including the path to find it
+            zipfile.add(filename, File.join(folder, filename))
+          end
+          zipfile.get_output_stream("readme.txt") { |os| os.write "*.jmx is the JMeter script. \n *.csv is the data files. " }
+        end
+      else
+        # already zipped
+      end
+      status 200
+      send_file(zipfile_name,:filename=>"#{@test_id}.zip", :type => 'Application/octet-stream')
+    else
+      # no existed
+      status 404
+    end
+  rescue Exception=>e
+    p e
+    status 500
+  end
+end
 # 404
 not_found do
   'bad path'
